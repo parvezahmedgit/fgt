@@ -1,0 +1,263 @@
+Site: HYD
+config vpn ipsec phase1-interface
+    edit "adb-a"
+        set interface "port1"
+        set ike-version 2
+        set peertype any
+        set net-device disable
+        set aggregate-member enable
+        set proposal des-sha512
+        set remote-gw 2.2.2.1
+        set psksecret ENC z2ZRYTVwe323xwj1JEhDIayPdZW7QzBrXmywMF36/qZpY/hUFKQLXeY72GpX66r6deaSeN0nPzkuU/oEaLw0goxexEmdFBfMHhXNx/tQFIqDD1IOkO6uKya8G9VzQZ1QWYGBAKLlk4bI/SdAnypdYYpeCXhf71hoMiYexee8jYry0KUthVs1SB1QtEi89OY6FKgV4Q==
+        set dpd-retryinterval 5
+    next
+end
+
+config vpn ipsec phase2-interface
+    edit "p2_adb-a"
+        set phase1name "adb-a"
+        set proposal des-sha512
+        set auto-negotiate enable
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+
+
+
+config vpn ipsec phase1-interface
+    edit "adb-b"
+        set interface "port4"
+        set ike-version 2
+        set peertype any
+        set net-device disable
+        set aggregate-member enable
+        set proposal des-sha512
+        set remote-gw 192.168.200.1
+        set psksecret ENC xeeBDVUNIP5csN8fjEPiW2wB/AT4nG06/VRmBDKctvSsM2lKS94Df0jiih0t9pV3lZz0Kfb7JghiT8XSSCkTvsMDQkz/wK5GV2ZTuXpwrYhcvqTlBAR2wvv3huIlrbzrfnoz4FQXlx+WtSXM6FKP346akQqYos1C+TlHSOD9Od43TXV16tUyLFQzyRedB9g2Q3MsgA==
+        set dpd-retryinterval 5
+    next
+end
+
+config vpn ipsec phase2-interface
+    edit "p2_adb-b"
+        set phase1name "adb-b"
+        set proposal des-sha512
+        set auto-negotiate enable
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+
+config system ipsec-aggregate
+    edit "vpn_agg"
+        set member "adb-a" "adb-b"
+        set algorithm redundant
+    next
+end
+
+config router static
+    edit 1
+        set gateway 1.1.1.2
+        set device "port1"
+    next
+    edit 2
+        set gateway 192.168.100.2
+        set device "port4"
+    next
+    edit 3
+        set dst 20.20.20.0 255.255.255.0
+        set device "vpn_agg"
+    next
+end
+
+config firewall policy
+    edit 1
+        set name "ipsec-out"
+        set uuid 91936a2e-283c-51f0-d0e6-7a35f495ba60
+        set srcintf "port2"
+        set dstintf "vpn_agg"
+        set action accept
+        set srcaddr "local"
+        set dstaddr "remote"
+        set schedule "always"
+        set service "ALL"
+    next
+    edit 2
+        set name "ipsec-in"
+        set uuid 95e188ae-283c-51f0-a0bf-8054bb0d20f6
+        set srcintf "vpn_agg"
+        set dstintf "port2"
+        set action accept
+        set srcaddr "remote"
+        set dstaddr "local"
+        set schedule "always"
+        set service "ALL"
+    next
+end
+
+================================
+Site: ADB
+config vpn ipsec phase1-interface
+    edit "hyd-a"
+        set interface "port1"
+        set ike-version 2
+        set peertype any
+        set net-device disable
+        set aggregate-member enable
+        set proposal des-sha512
+        set remote-gw 1.1.1.1
+        set psksecret ENC YNoYAN7FUBrFS9IjnEN0DmM+zVH44EwR05g1PtsiV0bh4Z9Bft1Gbp1DZCQF35pqKLIaNihGLnCi3YNTq1u1pco20c7X/JUsbEQEvL6Nkt3mtJ6YoPWRXYWiUIMfv78XyTrd852VG0kddnB4etpzkTsTZIDQ5ItEJoV97yZTHb26BLoYfNtUJOp6XQq/e0LYNikt+g==
+        set dpd-retryinterval 5
+    next
+end
+
+ADB # show vpn ipsec phase1-interface p2_hyd-a
+entry is not found in table
+
+ADB # show vpn ipsec phase2-interface p2_hyd-a 
+config vpn ipsec phase2-interface
+    edit "p2_hyd-a"
+        set phase1name "hyd-a"
+        set proposal des-sha512
+        set auto-negotiate enable
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+config vpn ipsec phase1-interface
+    edit "hyd-b"
+        set interface "port4"
+        set ike-version 2
+        set peertype any
+        set net-device disable
+        set aggregate-member enable
+        set proposal des-sha512
+        set remote-gw 192.168.100.1
+        set psksecret ENC o6+sAvClHVMBBpbUeRYsRYLAGewLEHOxSw50Cj4KhXKFDlKihzh7QF8+3WdYmbgKDXw+s18CP6sJkm6VLN44vJLEe0QWmX+I7PrVPsnxJKOfpxdeC1LjT2HH2nQjDiq2FWa+X6d6y0ZPNb8KxKP15c5Xam6LKQVN8yF3y/FSEZ07Yy/HMLZ2uozZg9ExowzSs1BDRg==
+        set dpd-retryinterval 5
+    next
+end
+
+ADB # show vpn ipsec phase2-interface p2_hyd-b 
+config vpn ipsec phase2-interface
+    edit "p2_hyd-b"
+        set phase1name "hyd-b"
+        set proposal des-sha512
+        set auto-negotiate enable
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+config system ipsec-aggregate
+    edit "vpn_agg"
+        set member "hyd-a" "hyd-b"
+        set algorithm redundant
+    next
+end
+
+
+config router static
+    edit 1
+        set gateway 2.2.2.2
+        set device "port1"
+    next
+    edit 2
+        set gateway 192.168.200.2
+        set device "port4"
+    next
+    edit 3
+        set dst 10.10.10.0 255.255.255.0
+        set device "vpn_agg"
+    next
+end
+
+config firewall policy
+    edit 1
+        set name "ipsec-out"
+        set uuid 91936a2e-283c-51f0-d0e6-7a35f495ba60
+        set srcintf "port2"
+        set dstintf "vpn_agg"
+        set action accept
+        set srcaddr "local"
+        set dstaddr "remote"
+        set schedule "always"
+        set service "ALL"
+    next
+    edit 2
+        set name "ipsec-in"
+        set uuid 95e188ae-283c-51f0-a0bf-8054bb0d20f6
+        set srcintf "vpn_agg"
+        set dstintf "port2"
+        set action accept
+        set srcaddr "remote"
+        set dstaddr "local"
+        set schedule "always"
+        set service "ALL"
+    next
+end
+
+********************
+
+
+ISP RTR 1:
+ISP1#sh run int f0/0 
+Building configuration...
+
+Current configuration : 80 bytes
+!
+interface FastEthernet0/0
+ ip address 1.1.1.2 255.255.255.0
+ duplex full
+end
+
+ISP1#sh run int f1/0 
+Building configuration...
+
+Current configuration : 80 bytes
+!
+interface FastEthernet1/0
+ ip address 2.2.2.2 255.255.255.0
+ duplex full
+end
+
+ISP1#sh run | i route
+ip route 0.0.0.0 0.0.0.0 1.1.1.1
+ip route 0.0.0.0 0.0.0.0 2.2.2.1
+
+*************************
+
+
+ISR RTR 2:
+interface FastEthernet0/0
+ ip address 192.168.100.2 255.255.255.0
+ duplex full
+end
+
+ISP2#sh run int f1/0
+Building configuration...
+
+Current configuration : 86 bytes
+!
+interface FastEthernet1/0
+ ip address 192.168.200.2 255.255.255.0
+ duplex full
+end
+
+ISP2#sh run | i route
+ip route 0.0.0.0 0.0.0.0 1.1.1.1
+ip route 0.0.0.0 0.0.0.0 2.2.2.1
+ip route 0.0.0.0 0.0.0.0 192.168.200.1
+ip route 0.0.0.0 0.0.0.0 192.168.100.1s
