@@ -1,0 +1,338 @@
+Site-HYD
+
+HYD-FW:
+config system global
+set alias "HYD"
+set hostname "HYD"
+set timezone 47
+end
+
+
+config system interface
+edit "port1"
+set mode static
+set ip 1.1.1.1 255.255.255.0
+set allowaccess ping https ssh snmp http 
+next
+
+edit "port2"
+set mode static
+set ip 10.10.10.1 255.255.255.0
+set allowaccess ping 
+next
+
+edit "port3"
+set mode static
+set ip 10.1.1.100 255.255.255.0
+set allowaccess ping https ssh snmp http
+set description "Mgmedit 
+next
+
+edit "port4"
+set mode static
+set ip 192.168.1.101 255.255.255.0
+set allowaccess ping https ssh snmp http
+next
+end
+
+
+config system sdwan
+config members
+        edit 1
+            set interface "adb-a"
+            set zone "sd-wan-zone"
+            set source 10.10.10.1
+        next
+        edit 2
+            set interface "adb-b"
+            set zone "sd-wan-zone"
+            set source 10.10.10.1
+        next
+config service
+        edit 1
+            set name "best_quality_link"
+            set mode priority
+            set dst "remote"
+            set src "local"
+            set health-check "ping_remote_lan"
+            set priority-members 1 2
+            set priority-zone "sd-wan-zone"
+edit "ping_remote_lan"
+            set server "20.20.20.1"
+            set members 1 2
+        next
+
+HYD # sh vpn ipsec phase1-interface adb-a 
+config vpn ipsec phase1-interface
+    edit "adb-a"
+        set interface "port1"
+        set peertype any
+        set net-device disable
+        set proposal des-md5 des-sha1
+        set comments "VPN: adb-a (Created by VPN wizard for SD-WAN)"
+        set remote-gw 1.1.1.2
+        set psksecret ENC sbnX2SNggKG34PSbmrOguCvzC50+8pmLGCbZYfvJcYvcGrX5HMZwbgJOir7RJs8BrJeY/sen/ROE3gmWWj2bOGOltkAb4QBGeHhtzc/t51kBMHt6e4IIw8CuJ7Lr6iAAUVA/Gw8/F9QUeAYIdTR3B+wUOPRFuxNt+1pKxXrIVHbRj4NqlmP+jI86si27Yhj+ZYbGLA==
+    next
+end
+
+HYD # sh vpn ipsec phase2-interface adb-a 
+config vpn ipsec phase2-interface
+    edit "adb-a"
+        set phase1name "adb-a"
+        set proposal des-md5 des-sha1
+        set auto-negotiate enable
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+
+HYD # sh vpn ipsec phase1-interface adb-b
+config vpn ipsec phase1-interface
+    edit "adb-b"
+        set interface "port4"
+        set peertype any
+        set net-device disable
+        set proposal des-md5 des-sha1
+        set comments "VPN: adb-b (Created by VPN wizard for SD-WAN)"
+        set remote-gw 192.168.1.102
+        set psksecret ENC ipS0z3KeHixRWhZvcSGf8udY5ovOUGNfdDhVDCVHrrtjib5iJr8zMPz3mrTpL+nPLKYfdY560GxuoG60U0TLszkWTNNPxeN45pJVu02LQAS2EGoFzvPNwBWq7ggkTnpfhgxsOpQ6yhpcr+8s2cONjjIN1zioXuZycbWTLBPHxA8nRdC0NdA5g1J/99jSL5IwI1y3Xw==
+    next
+end
+
+HYD # sh vpn ipsec phase2-interface adb-b 
+config vpn ipsec phase2-interface
+    edit "adb-b"
+        set phase1name "adb-b"
+        set proposal des-md5 des-sha1
+        set auto-negotiate enable
+        set comments "VPN: adb-b (Created by VPN wizard for SD-WAN)"
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+HYD # sh router static 
+config router static
+    edit 1
+        set dst 20.20.20.0 255.255.255.0
+        set distance 1
+        set sdwan-zone "sd-wan-zone"
+    next
+    edit 2
+        set dst 20.20.20.0 255.255.255.0
+        set distance 250
+        set blackhole enable
+    next
+end
+
+HYD # show firewall policy 
+config firewall policy
+    edit 1
+        set name "ipsec-out"
+        set uuid 559c3166-2866-51f0-1d39-aed30cab3913
+        set srcintf "port2"
+        set dstintf "sd-wan-zone"
+        set action accept
+        set srcaddr "local"
+        set dstaddr "remote"
+        set schedule "always"
+        set service "ALL"
+    next
+    edit 2
+        set name "ipsec-in"
+        set uuid 59dd22f8-2866-51f0-25fc-72c893db4506
+        set srcintf "sd-wan-zone"
+        set dstintf "port2"
+        set action accept
+        set srcaddr "remote"
+        set dstaddr "local"
+        set schedule "always"
+        set service "ALL"
+    next
+end
+
+HYD-SW:
+conf t
+ip default-gateway 10.10.10.1
+hostname HYD-SW
+do wr
+
+
+PC1:
+ip 10.10.10.2 255.255.255.0 10.10.10.1
+save
+
+***********************
+Site-ADB
+config system global
+set alias "ADB"
+set hostname "ADB"
+set timezone 47
+end
+config system interface
+edit "port1"
+set mode static
+set ip 1.1.1.2 255.255.255.0
+set allowaccess ping https ssh snmp http 
+next
+edit "port2"
+set mode static
+set ip 20.20.20.1 255.255.255.0
+set allowaccess ping 
+next
+edit "port3"
+set mode static
+set ip 10.1.1.101 255.255.255.0
+set allowaccess ping https ssh snmp http
+set description "Mgmt"
+next
+edit "port4"
+set mode static
+set ip 192.168.1.102 255.255.255.0
+set allowaccess ping https ssh snmp http
+next
+end
+
+
+config system sdwan
+edit "sd-wan-zone"
+        next
+config members
+        edit 1
+            set interface "hyd-a"
+            set zone "sd-wan-zone"
+            set source 20.20.20.1
+        next
+        edit 2
+            set interface "hyd-b"
+            set zone "sd-wan-zone"
+            set source 20.20.20.1
+        next
+        edit "ping"
+            set server "10.10.10.1"
+            set members 2 1
+        next
+        config service
+        edit 1
+            set name "best_qulity_link"
+            set mode priority
+            set dst "remote"
+            set src "local"
+            set health-check "ping"
+            set priority-members 2 1
+            set priority-zone "sd-wan-zone"
+        next
+        end
+
+ADB # show vpn ipsec phase1-interface hyd-a 
+config vpn ipsec phase1-interface
+    edit "hyd-a"
+        set interface "port1"
+        set peertype any
+        set net-device disable
+        set proposal des-md5 des-sha1
+        set comments "VPN: hyd-a (Created by VPN wizard for SD-WAN)"
+        set remote-gw 1.1.1.1
+        set psksecret ENC iBJ55zH4b4IkssYGv94ugzbRP5XlYVkvZfMWnSd46XN21fS2E7jCNNjgDO5Kwfe9OHgC4m4WJ+Ink06X1QLzL7CYDLLOs/3OK2h4otfD3I8EfbQrcmRYH863ldpFj3liOUe3IbSuUAtv5JZAKsXAgky2UKMLk8I5mlcRDUh+39VoKCbzDB5FQNn0j1gdP9x84x8OLQ==
+    next
+end
+
+ADB # show vpn ipsec phase2-interface hyd-a 
+config vpn ipsec phase2-interface
+    edit "hyd-a"
+        set phase1name "hyd-a"
+        set proposal des-md5 des-sha1
+        set auto-negotiate enable
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+ADB # show vpn ipsec phase1-interface hyd-b 
+config vpn ipsec phase1-interface
+    edit "hyd-b"
+        set interface "port4"
+        set peertype any
+        set net-device disable
+        set proposal des-md5 des-sha1
+        set comments "VPN: hyd-b (Created by VPN wizard for SD-WAN)"
+        set remote-gw 192.168.1.101
+        set psksecret ENC +SIRbiEyYE3bvqLctgXu2iYg9W9iqIjC6t7DZY+2oPo5+mH0qrQOFTI0qAhXpGsqi81/a9PHPi3EHfvBQiv54LfuvSUOg8X+cN4FgE6oEBSki50x7GUwt9DeEVV+FzDuZdGvKFs3GP+TM+hmblNloTqTWgOYwETtaJhNyV/pQGa8xDLUV/azeqAy+DBzy7aRif7QNQ==
+    next
+end
+
+ADB # show vpn ipsec phase2-interface hyd-b 
+config vpn ipsec phase2-interface
+    edit "hyd-b"
+        set phase1name "hyd-b"
+        set proposal des-md5 des-sha1
+        set auto-negotiate enable
+        set comments "VPN: hyd-b (Created by VPN wizard for SD-WAN)"
+        set src-addr-type name
+        set dst-addr-type name
+        set src-name "local"
+        set dst-name "remote"
+    next
+end
+
+ADB # 
+ADB # show router static 
+config router static
+    edit 1
+        set dst 10.10.10.0 255.255.255.0
+        set distance 1
+        set sdwan-zone "sd-wan-zone"
+    next
+    edit 2
+        set dst 10.10.10.0 255.255.255.0
+        set distance 250
+        set blackhole enable
+    next
+end
+
+ADB # show firewall policy 
+config firewall policy
+    edit 1
+        set name "ipsec-outbond"
+        set uuid dd9ffc16-2869-51f0-b62c-81182cb374a2
+        set srcintf "port2"
+        set dstintf "sd-wan-zone"
+        set action accept
+        set srcaddr "local"
+        set dstaddr "remote"
+        set schedule "always"
+        set service "ALL"
+        set logtraffic disable
+    next
+    edit 2
+        set name "ipsec-in"
+        set uuid e2014062-2869-51f0-2fbe-cccd6df08d3a
+        set srcintf "sd-wan-zone"
+        set dstintf "port2"
+        set action accept
+        set srcaddr "remote"
+        set dstaddr "local"
+        set schedule "always"
+        set service "ALL"
+        set logtraffic disable
+    next 
+end
+
+ADB # 
+
+ADB-SW:
+conf t
+ip default-gateway 20.20.20.1
+hostname ADB-SW
+do wr
+
+PC02:
+ip 20.20.20.2 255.255.255.0 20.20.20.1
+save
